@@ -1,0 +1,50 @@
+summary: Fetch many tabAccount
+tasks:
+  - id: mysql_tabaccount_search
+    fn: com.gs.datastore
+    args:
+      datasource: mysql
+      data: 
+        select: |
+          <js% 
+         
+            let strList = inputs.query.fields ? inputs.query.fields.split(',') : [];
+            if (!strList.includes("name")) {
+              strList.push("name");
+            }
+            let obj = {}
+            for (let i of strList) {
+                obj[i] = true
+            }
+            return obj
+          %>
+      config:
+        method: tabAccount.findMany
+
+  - id: trial
+    fn: com.gs.if
+    condition: <% outputs.mysql_tabaccount_search.data == null %>
+    tasks:
+      - id: return_if
+        fn: com.gs.return
+        args: |
+            <%
+              {
+                success: false,
+                code: 417,
+                data: {
+                  exc_type: 'LinkValidationError',
+                  exception: 'Could not find Customer: '
+                  }
+              }
+              %>
+
+  - id: return_else
+    fn: com.gs.else
+    tasks:
+      - id: retutn_good
+        fn: com.gs.return
+        args: <% outputs.mysql_tabaccount_search.data %>
+
+
+

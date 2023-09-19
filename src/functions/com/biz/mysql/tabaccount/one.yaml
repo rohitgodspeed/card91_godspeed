@@ -1,0 +1,33 @@
+summary: Fetch tabAccount
+tasks:
+  - id: fetch_data
+    fn: com.gs.datastore
+    args:
+      datasource: mysql
+      data:
+        where:
+          name: <% inputs.params.name %>
+        select:
+          name: true
+          customer: true
+      config:
+        method: tabAccount.findUnique
+
+  - id: check_data
+    fn: com.gs.if
+    condition: <% outputs.fetch_data.data.length == 0  %>
+    tasks:
+      - id: return_error
+        fn: com.gs.return
+        args: | 
+          <% 
+            {
+              "exc_type": "DoesNotExistError"
+            }
+            %>
+  - id: return_succes_reponse
+    fn: com.gs.else
+    tasks:
+      - id: return_trial
+        fn: com.gs.return
+        args: <% outputs.fetch_data.data %>

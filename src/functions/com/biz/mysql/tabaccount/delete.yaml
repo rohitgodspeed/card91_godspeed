@@ -1,0 +1,15 @@
+summary: Delete tabAccount
+tasks:
+  - id: delete
+    fn: com.gs.datastore
+    args:
+      datasource: mysql
+      data:
+        where:
+          name: <% inputs.params.name %>
+      config:
+        method: tabAccount.delete
+
+  - id: trial_false
+    fn: com.gs.return
+    args: <%  '[]' %>

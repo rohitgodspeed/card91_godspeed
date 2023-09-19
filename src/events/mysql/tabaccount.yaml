@@ -1,0 +1,111 @@
+# ONE
+/mysql/tabaccount/:name.http.get:
+  summary: Fetch tabAccount
+  description: Fetch tabAccount from database
+  fn: com.biz.mysql.tabaccount.one
+  params:
+    - name: name
+      in: path
+      required: true
+      schema:
+        type: string
+  responses:
+    content:
+      application/json:
+        schema:
+          type: object
+
+# CREATE
+/mysql/tabaccount.http.post:
+  summary: Create a new tabAccount
+  description: Create tabAccount from database
+  fn: com.biz.mysql.tabaccount.create
+  body:
+    content:
+      application/json:
+        schema:
+          $ref: '#/definitions/mysql/tabAccount'
+  responses:
+    content:
+      application/json:
+        schema:
+          type: object
+
+# UPDATE
+/mysql/tabaccount/:name.http.put:
+  summary: Update a tabAccount
+  description: Update tabAccount from database
+  fn: com.biz.mysql.tabaccount.update
+  body:
+    content:
+      application/json:
+        schema:
+          type: object
+          properties:
+            kyc_type:
+              type: string
+            kuc_mode: 
+              type: string
+  params:
+    - name: name
+      in: path
+      required: true
+      schema:
+        type: string
+  responses:
+    content:
+      application/json:
+        schema:
+          type: object
+
+# DELETE
+/mysql/tabaccount/:name.http.delete:
+  summary: Delete a tabAccount
+  description: Delete tabAccount from database
+  fn: com.biz.mysql.tabaccount.delete
+  params:
+    - name: name
+      in: path
+      required: true
+      schema:
+        type: string
+  responses:
+    content:
+      application/json:
+        schema:
+          type: object
+
+# SEARCH
+/mysql/tabaccount/search.http.post:
+  summary: Fetch multiple tabAccount
+  description: Fetch multiple tabAccount from database
+  fn: com.biz.mysql.tabaccount.search
+  body:
+    content:
+      application/json:
+        schema:
+          type: object
+  responses:
+    content:
+      application/json:
+        schema:
+          type: array
+
+# GET SPECIFIC DETAILS
+
+# ONE
+/api/resources/:name.fields.http.get:
+  summary: Fetch tabAccount
+  description: Fetch tabAccount from database
+  fn: com.biz.mysql.tabaccount.one
+  params:
+    - name: name
+      in: path
+      required: true
+      schema:
+        type: string
+  responses:
+    content:
+      application/json:
+        schema:
+          type: object

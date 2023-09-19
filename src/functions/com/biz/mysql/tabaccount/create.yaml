@@ -1,0 +1,115 @@
+# Step -1 Checking if customer in  Customer Databse table or not
+# step -2  checking customer status
+# step -3 check account data is already present in the database or not 
+# step -4 create account  
+summary: business logic for create a new account for a perticular customer
+tasks:
+# Step -1 Checking if customer in  Customer Databse table or not
+  - id: get_customer_data_from_tabCustomer
+    fn: com.gs.datastore
+    description: check wheather the customer is in the database tabCustomer table
+    args:
+      datasource: mysql
+      data:
+        where:
+          name: <% inputs.body.customer %>
+        select:
+          status: true
+      config:
+        method: tabCustomer.findUnique
+# if there is no customer then throw error
+  - id: check_customer_data
+    fn: com.gs.if
+    description: if the customer is not in the database then throw error 
+    condition: <% outputs.get_customer_data_from_tabCustomer.data == null  %>
+    tasks:
+      - id: customer_not_found_error
+        fn: com.gs.return
+        args: |
+          <%
+            {
+              success: false,
+              code: 417,
+              data: {
+                exc_type: 'LinkValidationError',
+                exception: 'Could not find Customer: '+  inputs.body.customer
+                }
+            }
+            %>
+
+# step -2  checking customer status
+  - id: check_status_of_customer
+    fn: com.gs.if
+    description: if customer status is not Active in the customer table then then throw error or else proceed further
+    condition: <% outputs.get_customer_data_from_tabCustomer.data.status != "Active"  %>
+    tasks:
+      - id: reject_if_inactive
+        fn: com.gs.return
+        args: |
+          <%
+            {
+              success: false,
+              code: 417,
+              data: {
+                exc_type: 'LinkValidationError',
+                exception: 'Customer Status is: ' + outputs.get_customer_data_from_tabCustomer.data.status
+                }
+            }
+            %>
+# step -3 check account data is already present in the database or not  
+  - id: check_account_details_in_tabaccount
+    fn: com.gs.else
+    description: check wheather the account number and type of it is already present in the tabAccount
+    tasks:
+      - id: cheaking_account_data
+        fn: com.gs.datastore
+        description: search for the account number and account type in tabAccount
+        args:
+          datasource: mysql
+          data:
+            where:
+              account_type: <% inputs.body.account_type %>
+              account_number: <% inputs.body.account_number %>
+          config:
+            method: tabAccount.findMany
+  - id: check_previous_data
+    fn: com.gs.if
+    description: if the data found in the table then throw error
+    condition: <% outputs.cheaking_account_data.data.length != 0  %>
+    tasks:
+      - id: throw_error_account_exists
+        fn: com.gs.return
+        args: |
+          <%
+              {
+                success: false,
+                code: 417,
+                data: {
+                  exc_type: 'ValidationError',
+                  exception: ' Account Number ' + inputs.body.account_number + ' with the same Account Type ' + inputs.body.account_type + ' already exists'
+                }
+              }
+          %>
+# step -4 create account 
+  - id: create_account
+    fn: com.gs.else
+    description: create account with the given inputs and passed values which are needed
+    tasks:
+      - id: create_account
+        fn: com.gs.datastore
+        args: 
+          datasource: mysql
+          data:
+            data: <% inputs.body %> 
+            select:
+              tsp: true
+              customer: true
+              business: true
+              account_type: true
+              account_number: true
+              account_holder_name: true
+              expiry_date: true
+              is_foreign_transactions_allowed: true
+              enabled: true
+          config: 
+            method: tabAccount.create
