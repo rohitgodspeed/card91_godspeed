@@ -1,50 +1,61 @@
 summary: Fetch many tabAccount
 tasks:
-  - id: mysql_tabaccount_search
-    fn: com.gs.datastore
-    args:
-      datasource: mysql
-      data: 
-        select: |
-          <js% 
-         
-            let strList = inputs.query.fields ? inputs.query.fields.split(',') : [];
-            if (!strList.includes("name")) {
-              strList.push("name");
+  - id: validation_params
+    fn: com.gs.transform
+    args: |
+      <js%
+          let strList = inputs.query.fields ? inputs.query.fields.split(',') : [];
+          const validFields = ["name", "creation", "modified", "modified_by", "owner", "docstatus", "idx", "title", "tsp", "business", "date_of_birth", "contact_details", "risk_profile", "transaction_risk_profile", "status", "user_tags", "comments", "assign", "liked_by", "kyc_type", "kyc_mode", "full_name", "first_name", "last_name", "kyc_validity", "amended_from", "tsp_list"];
+          const invalidList = []
+          const validList = []
+          for (let i of strList){
+              if (!validFields.includes(i)){
+              invalidList.push(i)
+            }else{
+              validList.push(i)
             }
-            let obj = {}
-            for (let i of strList) {
-                obj[i] = true
+          }
+            
+          if (invalidList.length > 0) {         
+            return   {
+              exc_type:"DataError",
+              exception: `Field not permitted in query :${invalidList}`
             }
-            return obj
-          %>
-      config:
-        method: tabAccount.findMany
+          }else{   
+             return "success"
+          }
+        %>
 
-  - id: trial
+
+  - id: if_valid_fields
     fn: com.gs.if
-    condition: <% outputs.mysql_tabaccount_search.data == null %>
+    condition: <% outputs.validation_params.data == "success" %>
     tasks:
-      - id: return_if
-        fn: com.gs.return
-        args: |
-            <%
-              {
-                success: false,
-                code: 417,
-                data: {
-                  exc_type: 'LinkValidationError',
-                  exception: 'Could not find Customer: '
-                  }
+      - id: mysql_tabaccount_search
+        fn: com.gs.datastore
+        args:
+          datasource: mysql
+          data: 
+            select: |
+              <js% 
+              let strList = inputs.query.fields ? inputs.query.fields.split(',') : [];
+              if (!strList.includes("name")) {
+              strList.push("name");
               }
+                let obj = {}
+                for (let i of strList) {
+                    obj[i] = true
+                }
+                return obj
               %>
+            skip: <% parseInt(inputs.query.limit_start)%>
+            take: <% parseInt(inputs.query.limit_page_length) %>
+          config:
+            method: tabAccount.findMany
 
-  - id: return_else
+  - id: if_invalid_fields 
     fn: com.gs.else
     tasks:
-      - id: retutn_good
+      - id: error_handle
         fn: com.gs.return
-        args: <% outputs.mysql_tabaccount_search.data %>
-
-
-
+        args: <% outputs.validation_params.data%>
